@@ -1,0 +1,24 @@
+{
+    "schemaVersion": "1.2",
+    "acapPackageConf": {
+        "setup": {
+            "appName": "modbusacap",
+            "friendlyName": "Modbus Prototype", 
+            "vendor": "Axis Communications AB",
+            "embeddedSdkVersion": "2.0",
+            "user": {
+                "username": "root",
+                "group": "root"
+            },
+            "runMode": "respawn",
+            "version": "1.0.0"
+        },
+        "configuration": {
+            "paramConfig": [
+                {"name": "Scenario", "type": "int:min=1,max=99", "default": "1"},
+                {"name": "Server", "type": "string", "default": "172.25.75.172"},
+                {"name": "Mode", "type": "enum:0|Server, 1|Client", "default": "0"}
+            ]
+        }
+    }
+}

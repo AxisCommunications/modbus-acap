@@ -1,0 +1,34 @@
+---
+name: 'Build ACAPs'
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v2
+      # Install Docker used by Makefile for our builds
+      - run: sudo apt-get update
+      - run: sudo apt-get --fix-broken install
+      - run: sudo apt-get install -y runc containerd docker.io
+      # Test all Makefile targets and make sure the ACAP files are created
+      - name: Build ACAPs
+        run: make -j dockerbuild
+      - name: Verify ACAPs
+        run: |
+          for a in armv7hf aarch64; do
+          echo "Verification of $a ACAP"
+          tar tzf *$a.eap >/dev/null
+          done
+      - name: Clean
+        run: |
+          make clean
+          echo 'Make sure no ACAP files are left'
+          [ -z "$(ls ./*.eap ./*LICENSE.txt)" ]

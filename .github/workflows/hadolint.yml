@@ -1,0 +1,18 @@
+---
+name: 'Run hadolint'
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  hadolint:
+    name: hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v1.6.0
+        with:
+          dockerfile: Dockerfile

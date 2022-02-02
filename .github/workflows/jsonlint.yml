@@ -1,0 +1,22 @@
+---
+name: 'Run JSONLint'
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  jsonlint:
+    name: jsonlint
+    runs-on: ubuntu-latest
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v2
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y --no-install-recommends python3-demjson
+      - name: Run JSONLint
+        run: |
+          find . -iname \*.json -not -path '*/\.*' -print0 |
+          xargs -0 -P $(nproc) -r -n1 jsonlint

@@ -1,0 +1,8 @@
+*.conf*
+*.eap
+.eap-install.cfg
+libmodbus*
+*LICENSE.txt
+*log_messages.???
+modbusacap
+*.old

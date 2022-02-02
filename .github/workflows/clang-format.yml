@@ -1,0 +1,20 @@
+---
+name: 'Check C style with clang-format'
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run clang-format
+        uses: DoozyX/clang-format-lint-action@v0.12
+        with:
+          clangFormatVersion: 12
+          exclude: .git
+          extensions: h,c
