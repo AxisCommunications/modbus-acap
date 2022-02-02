@@ -8,10 +8,10 @@
             "embeddedSdkVersion": "2.0",
             "user": {
                 "username": "root",
-                "group": "root"
+                "group": "sdk"
             },
             "runMode": "respawn",
-            "version": "1.0.0"
+            "version": "1.0.1"
         },
         "configuration": {
             "paramConfig": [
