@@ -43,13 +43,15 @@ DOCKER_BUILDKIT=1 docker build --build-arg ARCH=aarch64 -o type=local,dest=. .
 
 ## Run
 
-The ACAP can be run in either client mode or server mode (default):
+The ACAP can be run in either client mode or server mode (default), configured
+with the application parameter `Mode`:
 
 In client mode, it will subscribe to
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
-(AOA) events and send the trigger status (active/inactive) over Modbus (TCP) to
-the Modbus server running on the host set in the ACAP's parameter `server`.
-libmodbus' `MODBUS_TCP_DEFAULT_PORT` (502) is used.
+(AOA) events for the AOA scenario specified in the application parameter
+`Scenario` (default: Scenario 1) and send the trigger status (active/inactive)
+over Modbus (TCP) to the Modbus server running on the host set in the ACAP's
+parameter `Server`. libmodbus' `MODBUS_TCP_DEFAULT_PORT` (502) is used.
 
 In server mode, it will listen for incoming TCP requests on the libmodbus
 `MODBUS_TCP_DEFAULT_PORT` (502) and print incoming AOA status updates to the
