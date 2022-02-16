@@ -1,14 +1,24 @@
 # Modbus ACAP
 
-This repository contains the source code to build a small ACAP application that
-exports events from
+This repository contains the source code to build a small prototype ACAP
+application that exports events from
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
 (AOA) over
 [Modbus](https://en.wikipedia.org/wiki/Modbus) using
 [libmodbus](https://libmodbus.org/). The ACAP can be run in either server or
 client mode, meaning two Axis devices can be used to showcase it.
 
+*The purpose of this repo is to serve as boilerplate code and keep things
+simple, hence it uses basic Modbus/TCP without TLS and such.*
+
 ## Build
+
+The build step creates `eap` (embedded application package) packages that can
+then be deployed on the target Axis device e.g. via the device's web UI.
+
+*For more information about the `eap` files, their content, and other ways to
+deploy, please see the
+[ACAP Developer Guide](https://help.axis.com/acap-3-developer-guide).*
 
 ### On host with ACAP SDK installed
 
@@ -35,9 +45,9 @@ make -j dockerbuild
 If you do have Docker but no `make` on your system:
 
 ```sh
-# 32-bit ARM
+# 32-bit ARM, e.g. ARTPEC-6- and ARTPEC-7-based devices
 DOCKER_BUILDKIT=1 docker build --build-arg ARCH=armv7hf -o type=local,dest=. .
-# 64-bit ARM
+# 64-bit ARM, e.g. ARTPEC-8-based devices
 DOCKER_BUILDKIT=1 docker build --build-arg ARCH=aarch64 -o type=local,dest=. .
 ```
 
