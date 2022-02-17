@@ -26,6 +26,10 @@ git clone https://github.com/<your username>/modbus-acap.git
 git checkout -b <branch name>
 ```
 
+### Lint code after adding changes
+
+See more details in [LINT.md](LINT.md).
+
 ### Commit your changes
 
 ```sh
