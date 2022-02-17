@@ -1,10 +1,7 @@
 ---
-name: 'Build ACAPs'
+name: Build ACAPs
 
-on:
-  push:
-    branches:
-      - '**'
+on: push
 
 jobs:
   build:
