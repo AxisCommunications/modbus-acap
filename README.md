@@ -1,5 +1,7 @@
 # Modbus ACAP
 
+[![Build ACAPs](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml/badge.svg)](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml)
+
 This repository contains the source code to build a small prototype ACAP
 application that exports events from
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
