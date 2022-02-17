@@ -1,3 +1,5 @@
+*Copyright (C) 2022, Axis Communications AB, Lund, Sweden. All Rights Reserved.*
+
 # Modbus ACAP
 
 [![Build ACAPs](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml/badge.svg)](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml)
