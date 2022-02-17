@@ -1,3 +1,5 @@
+*Copyright (C) 2022, Axis Communications AB, Lund, Sweden. All Rights Reserved.*
+
 # Modbus ACAP
 
 This repository contains the source code to build a small prototype ACAP
