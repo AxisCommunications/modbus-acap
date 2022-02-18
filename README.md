@@ -71,3 +71,7 @@ parameter `Server`. libmodbus' `MODBUS_TCP_DEFAULT_PORT` (502) is used.
 In server mode, it will listen for incoming TCP requests on the libmodbus
 `MODBUS_TCP_DEFAULT_PORT` (502) and print incoming AOA status updates to the
 application log.
+
+## License
+
+[Apache 2.0](./LICENSE)
