@@ -1,0 +1,6 @@
+Dockerfile
+CODEOWNERS
+*LICENSE.txt
+*.md
+*.eap
+.*
