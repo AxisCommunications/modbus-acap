@@ -1,5 +1,5 @@
 ARG ARCH=armv7hf
-ARG ACAP_SDK_VERSION=3.4.2
+ARG ACAP_SDK_VERSION=3.5
 ARG SDK_IMAGE=axisecp/acap-sdk
 ARG BUILD_DIR=/usr/local/src/server-acap
 

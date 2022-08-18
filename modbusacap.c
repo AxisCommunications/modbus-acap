@@ -289,6 +289,7 @@ static void init_signals(void)
 int main(int argc, char **argv)
 {
     GError *error = NULL;
+    int ret = 0;
 
     init_signals();
 
@@ -304,19 +305,17 @@ int main(int argc, char **argv)
     {
         LOG_E("%s/%s: ax_parameter_new failed (%s)", __FILE__, __FUNCTION__, error->message);
         g_error_free(error);
-        return 1;
+        ret = 1;
+        goto exit_ehandler;
     }
-    if (!setup_param("Mode", mode_callback))
+    // clang-format off
+    if (!setup_param("Mode", mode_callback) ||
+        !setup_param("Scenario", scenario_callback) ||
+        !setup_param("Server", server_callback))
+    // clang-format on
     {
-        return 1;
-    }
-    if (!setup_param("Scenario", scenario_callback))
-    {
-        return 1;
-    }
-    if (!setup_param("Server", server_callback))
-    {
-        return 1;
+        ret = 1;
+        goto exit_param;
     }
 
     // We are initialized, trigger start of Modbus handling via parameter callback
@@ -329,6 +328,10 @@ int main(int argc, char **argv)
     g_main_loop_run(loop);
 
     // Cleanup and controlled shutdown
+exit_param:
+    LOG_I("%s/%s: Free parameter handler ...", __FILE__, __FUNCTION__);
+    ax_parameter_free(axparameter);
+exit_ehandler:
     LOG_I("%s/%s: Unsubscribe from events ...", __FILE__, __FUNCTION__);
     ax_event_handler_unsubscribe(ehandler, subscription, NULL);
     ax_event_handler_free(ehandler);
@@ -340,5 +343,5 @@ int main(int argc, char **argv)
     LOG_I("%s/%s: Closing syslog ...", __FILE__, __FUNCTION__);
     close_syslog();
 
-    return 0;
+    return ret;
 }
