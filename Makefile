@@ -1,6 +1,3 @@
-# Copyright (C) 2022 Axis Communications AB, Lund, Sweden
-# SPDX-License-Identifier: Apache-2.0
-
 .PHONY: %.eap dockerbuild 3rd-party-clean clean very-clean
 
 PROG = modbusacap
