@@ -24,6 +24,7 @@ docker run --rm \
   -e LINTER_RULES_PATH=/ \
   -e VALIDATE_CLANG_FORMAT=true \
   -e VALIDATE_DOCKERFILE_HADOLINT=true \
+  -e VALIDATE_JSON=true \
   -e VALIDATE_MARKDOWN=true \
   -e VALIDATE_YAML=true \
   github/super-linter:slim-v4
@@ -54,6 +55,9 @@ hadolint $(find -type f -name Dockerfile*)
 
 # Lint Dockerfile files (alternative command)
 find -type f -name Dockerfile* -exec hadolint {} +
+
+# Lint JSON files
+eslint --no-eslintrc -c /action/lib/.automation/.eslintrc.yml --ext .json .
 
 # Lint Markdown files
 markdownlint .
