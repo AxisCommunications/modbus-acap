@@ -1,7 +1,8 @@
 .PHONY: %.eap dockerbuild 3rd-party-clean clean very-clean
 
 PROG = modbusacap
-OBJS = $(PROG).o modbus_client.o modbus_server.o
+SRCS = $(wildcard *.c)
+OBJS = $(SRCS:.c=.o)
 STRIP ?= strip
 
 PKGS = gio-2.0 glib-2.0 axevent axparameter
@@ -48,10 +49,7 @@ dockerbuild: armv7hf.eap aarch64.eap
 	make -C $(LIBMODBUS_DIR) clean
 
 clean:
-ifneq (,$(wildcard ./package.conf.orig))
-	mv package.conf.orig package.conf
-endif
-	rm -f $(PROG) *.o *.eap *LICENSE.txt
+	rm -f $(PROG) *.o *.eap *LICENSE.txt pa*conf*
 
 very-clean: clean 3rd-party-clean
 	rm -rf *.eap *.eap.old eap $(LIBMODBUS_DIR)
