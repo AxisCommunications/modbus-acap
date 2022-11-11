@@ -1,29 +1,27 @@
 ---
-name: Build ACAPs
+name: Build
 
-on:
-  pull_request:
-    types: [opened, reopened]
-  push:
+on: push
 
 jobs:
-  build:
+  build_acap:
+    name: Build ACAPs
     runs-on: ubuntu-latest
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v3
       # Test all Makefile targets and make sure the ACAP files are created
-      - name: Build ACAPs
+      - name: Build
         run: make -j dockerbuild
-      - name: Verify ACAPs
+      - name: Verify
         run: |
-          for a in armv7hf aarch64; do
-          echo "Verification of $a ACAP"
-          tar tzf *$a.eap >/dev/null
+          for f in *.eap; do
+          echo "Verification of $f:"
+          tar tzf "$f"
           done
       - name: Clean
         run: |
           make clean
-          echo 'Make sure no ACAP files are left'
+          echo 'Make sure no ACAP files are left:'
           [ -z "$(ls ./*.eap ./*LICENSE.txt)" ]

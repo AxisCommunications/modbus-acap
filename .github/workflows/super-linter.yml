@@ -1,7 +1,7 @@
 ---
-name: Lint Code Base
+name: Lint
 
-on: [push, pull_request]
+on: push
 
 jobs:
   build:
@@ -24,5 +24,6 @@ jobs:
           IGNORE_GITIGNORED_FILES: true
           VALIDATE_CLANG_FORMAT: true
           VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_JSON: true
           VALIDATE_MARKDOWN: true
           VALIDATE_YAML: true
