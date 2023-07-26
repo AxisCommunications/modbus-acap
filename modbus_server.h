@@ -19,7 +19,7 @@
 
 #include <glib.h>
 
-gboolean modbus_server_start(void);
+gboolean modbus_server_start(const guint32 port);
 void modbus_server_stop(void);
 
 #endif /* _MODBUS_SERVER_H_ */

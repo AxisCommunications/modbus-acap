@@ -25,6 +25,7 @@
 
 static gboolean run_server = FALSE;
 static pthread_t modbus_server_thread_id = -1;
+static guint32 modbus_port = 0;
 
 static void *run_modbus_server(void *run)
 {
@@ -32,10 +33,10 @@ static void *run_modbus_server(void *run)
     modbus_t *srv_ctx;
     modbus_mapping_t *mb_mapping = NULL;
     int s;
-    long result = 1;
 
-    LOG_I("Trying to create Modbus TCP context for all IP addresss and port %u ...", MODBUS_TCP_DEFAULT_PORT);
-    srv_ctx = modbus_new_tcp(NULL, MODBUS_TCP_DEFAULT_PORT);
+    assert(1024 <= modbus_port && 65535 >= modbus_port);
+    LOG_I("Trying to create Modbus TCP context for all IP addresss and port %u ...", modbus_port);
+    srv_ctx = modbus_new_tcp(NULL, modbus_port);
     if (NULL == srv_ctx)
     {
         LOG_E("%s/%s: Unable to create the libmodbus context (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
@@ -47,7 +48,6 @@ static void *run_modbus_server(void *run)
     if (-1 == s)
     {
         LOG_E("%s/%s: modbus_tcp_listen failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
-        modbus_free(srv_ctx);
         goto server_exit;
     }
 
@@ -55,7 +55,6 @@ static void *run_modbus_server(void *run)
     if (-1 == modbus_tcp_accept(srv_ctx, &s))
     {
         LOG_E("%s/%s: modbus_tcp_accept failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
-        modbus_free(srv_ctx);
         goto server_exit;
     }
 
@@ -64,12 +63,10 @@ static void *run_modbus_server(void *run)
     if (NULL == mb_mapping)
     {
         LOG_E("%s/%s: Failed to allocate the mapping: %s", __FILE__, __FUNCTION__, modbus_strerror(errno));
-        modbus_free(srv_ctx);
         goto server_exit;
     }
 
     LOG_I("%s/%s: Start receiving ...", __FILE__, __FUNCTION__);
-    result = 0;
     uint8_t req[MODBUS_TCP_MAX_ADU_LENGTH];
     while (*((gboolean *)run))
     {
@@ -128,13 +125,14 @@ server_exit:
     modbus_mapping_free(mb_mapping);
     modbus_free(srv_ctx);
 
-    return (void *)result;
+    pthread_exit(NULL);
 }
 
-gboolean modbus_server_start()
+gboolean modbus_server_start(const guint32 port)
 {
     modbus_server_stop();
     run_server = TRUE;
+    modbus_port = port;
     int result = pthread_create(&modbus_server_thread_id, NULL, run_modbus_server, &run_server);
     if (0 != result)
     {
