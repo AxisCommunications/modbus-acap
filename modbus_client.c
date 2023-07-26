@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <modbus.h>
 
@@ -24,11 +25,7 @@ static modbus_t *ctx = NULL;
 
 gboolean modbus_client_send_event(const gboolean active)
 {
-    if (NULL == ctx)
-    {
-        LOG_E("%s/%s: Modbus context is NULL, did you forget to init client?", __FILE__, __FUNCTION__);
-        return FALSE;
-    }
+    assert(NULL != ctx);
 
     if (1 != modbus_write_bit(ctx, EVENT_ACTIVE_ADDRESS, active))
     {
@@ -38,16 +35,13 @@ gboolean modbus_client_send_event(const gboolean active)
     return TRUE;
 }
 
-gboolean modbus_client_init(const gchar *server)
+gboolean modbus_client_init(const gchar *server, const guint32 port)
 {
-    if (NULL == server)
-    {
-        LOG_E("%s/%s: Server name must not be NULL", __FILE__, __FUNCTION__);
-        return FALSE;
-    }
+    assert(NULL != server);
+    assert(1024 <= port && 65535 >= port);
     modbus_free(ctx);
-    LOG_I("Trying to create Modbus TCP context for %s:%u", server, MODBUS_TCP_DEFAULT_PORT);
-    ctx = modbus_new_tcp(server, MODBUS_TCP_DEFAULT_PORT);
+    LOG_I("Trying to create Modbus TCP context for %s:%u", server, port);
+    ctx = modbus_new_tcp(server, port);
     if (NULL == ctx)
     {
         LOG_E("%s/%s: Unable to create the libmodbus context (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));

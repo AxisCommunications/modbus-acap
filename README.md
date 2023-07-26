@@ -135,11 +135,14 @@ In client mode, it will subscribe to
 (AOA) events for the AOA scenario specified in the application parameter
 `Scenario` (default: Scenario 1) and send the trigger status (active/inactive)
 over Modbus (TCP) to the Modbus server running on the host set in the ACAP's
-parameter `Server`. libmodbus' `MODBUS_TCP_DEFAULT_PORT` (502) is used.
+parameter `Server`.
 
-In server mode, it will listen for incoming TCP requests on the libmodbus
-`MODBUS_TCP_DEFAULT_PORT` (502) and print incoming AOA status updates to the
-application log.
+In server mode, it will listen for incoming TCP requests and print incoming
+AOA status updates to the application log.
+
+***NB!** The default Modbus/TCP port 502 requires running as a privileged user.
+In order to run as a non-privileged user, this ACAP only allows ports in the
+non-privileged range 1024–65535.*
 
 ## License
 

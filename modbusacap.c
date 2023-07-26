@@ -34,6 +34,7 @@ static AXEventHandler *ehandler;
 static AXParameter *axparameter = NULL;
 static gboolean initialized = FALSE;
 static guint8 mode = 0;
+static guint32 port = 0;
 static guint subscription;
 
 static void open_syslog(const char *app_name)
@@ -153,15 +154,15 @@ static void setup_event_subscription(guint *subscription, const guint newscenari
     *subscription = aoatrigger_subscription(newscenario);
 }
 
-static gboolean setup_modbus(const guint mode, const gchar *server)
+static gboolean setup_modbus(const guint8 mode, const guint32 port, const gchar *server)
 {
     switch (mode)
     {
     case SERVER:
-        return modbus_server_start();
+        return modbus_server_start(port);
     case CLIENT:
         assert(NULL != server);
-        return modbus_client_init(server);
+        return modbus_client_init(server, port);
     default:
         LOG_E("%s/%s: %u is not a known mode", __FILE__, __FUNCTION__, mode);
         break;
@@ -218,7 +219,7 @@ static void server_callback(const gchar *name, const gchar *value, void *data)
     LOG_I("%s/%s: Got new %s (%s)", __FILE__, __FUNCTION__, name, value);
 
     // Setup Modbus for this mode
-    if (initialized && !setup_modbus(mode, value))
+    if (initialized && !setup_modbus(mode, port, value))
     {
         LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
     }
@@ -238,9 +239,31 @@ static void mode_callback(const gchar *name, const gchar *value, void *data)
     LOG_I("%s/%s: Got new %s (%s)", __FILE__, __FUNCTION__, name, mode == SERVER ? "server" : "client");
 
     // Setup Modbus for this mode
-    if (initialized && !setup_modbus(mode, get_param(axparameter, "Server")))
+    if (initialized && !setup_modbus(mode, port, get_param(axparameter, "Server")))
     {
         LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
+        assert(FALSE);
+    }
+}
+
+static void port_callback(const gchar *name, const gchar *value, void *data)
+{
+    (void)data;
+    if (NULL == value)
+    {
+        LOG_E("%s/%s: Unexpected NULL value for %s", __FILE__, __FUNCTION__, name);
+        return;
+    }
+
+    port = atoi(value);
+    assert(1024 <= port || 65535 >= port);
+    LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, port);
+
+    // Setup Modbus for this port
+    if (initialized && !setup_modbus(mode, port, get_param(axparameter, "Server")))
+    {
+        LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
+        assert(FALSE);
     }
 }
 
@@ -310,6 +333,7 @@ int main(int argc, char **argv)
     }
     // clang-format off
     if (!setup_param("Mode", mode_callback) ||
+        !setup_param("Port", port_callback) ||
         !setup_param("Scenario", scenario_callback) ||
         !setup_param("Server", server_callback))
     // clang-format on
