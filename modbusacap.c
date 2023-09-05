@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022, Axis Communications AB, Lund, Sweden
+ * Copyright (C) 2023, Axis Communications AB, Lund, Sweden
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,14 @@ enum Mode
     CLIENT = 1
 };
 
+static GMainLoop *main_loop = NULL;
 static AXEventHandler *ehandler;
 static AXParameter *axparameter = NULL;
 static gboolean initialized = FALSE;
 static guint8 mode = 0;
 static guint32 port = 0;
 static guint subscription;
+static pthread_mutex_t lock;
 
 static void open_syslog(const char *app_name)
 {
@@ -44,7 +46,8 @@ static void open_syslog(const char *app_name)
 
 static void close_syslog(void)
 {
-    LOG_I("Exiting!");
+    LOG_I("%s/%s: Exiting!", __FILE__, __FUNCTION__);
+    closelog();
 }
 
 static void event_callback(guint subscription, AXEvent *event, void *data)
@@ -207,6 +210,22 @@ static void scenario_callback(const gchar *name, const gchar *value, void *data)
     setup_event_subscription(&subscription, scenario);
 }
 
+static void close_current_modbus(const guint8 m)
+{
+    switch (m)
+    {
+    case SERVER:
+        modbus_server_stop();
+        break;
+    case CLIENT:
+        modbus_client_cleanup();
+        break;
+    default:
+        LOG_E("%s/%s: %u is not a known mode", __FILE__, __FUNCTION__, mode);
+        break;
+    }
+}
+
 static void server_callback(const gchar *name, const gchar *value, void *data)
 {
     (void)data;
@@ -216,6 +235,8 @@ static void server_callback(const gchar *name, const gchar *value, void *data)
         return;
     }
 
+    pthread_mutex_lock(&lock);
+    close_current_modbus(mode);
     LOG_I("%s/%s: Got new %s (%s)", __FILE__, __FUNCTION__, name, value);
 
     // Setup Modbus for this mode
@@ -223,6 +244,7 @@ static void server_callback(const gchar *name, const gchar *value, void *data)
     {
         LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
     }
+    pthread_mutex_unlock(&lock);
 }
 
 static void mode_callback(const gchar *name, const gchar *value, void *data)
@@ -234,6 +256,8 @@ static void mode_callback(const gchar *name, const gchar *value, void *data)
         return;
     }
 
+    pthread_mutex_lock(&lock);
+    close_current_modbus(mode);
     mode = atoi(value);
     assert(0 == mode || 1 == mode);
     LOG_I("%s/%s: Got new %s (%s)", __FILE__, __FUNCTION__, name, mode == SERVER ? "server" : "client");
@@ -244,6 +268,7 @@ static void mode_callback(const gchar *name, const gchar *value, void *data)
         LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
         assert(FALSE);
     }
+    pthread_mutex_unlock(&lock);
 }
 
 static void port_callback(const gchar *name, const gchar *value, void *data)
@@ -255,6 +280,8 @@ static void port_callback(const gchar *name, const gchar *value, void *data)
         return;
     }
 
+    pthread_mutex_lock(&lock);
+    close_current_modbus(mode);
     port = atoi(value);
     assert(1024 <= port || 65535 >= port);
     LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, port);
@@ -265,6 +292,7 @@ static void port_callback(const gchar *name, const gchar *value, void *data)
         LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
         assert(FALSE);
     }
+    pthread_mutex_unlock(&lock);
 }
 
 static gboolean setup_param(const gchar *name, AXParameterCallback callbackfn)
@@ -298,26 +326,53 @@ static gboolean setup_param(const gchar *name, AXParameterCallback callbackfn)
     return TRUE;
 }
 
-static void init_signals(void)
+static void signal_handler(gint signal_num)
 {
-    struct sigaction sa;
+    switch (signal_num)
+    {
+    case SIGTERM:
+    case SIGABRT:
+    case SIGINT:
+        g_main_loop_quit(main_loop);
+        break;
+    default:
+        break;
+    }
+}
 
-    sigemptyset(&sa.sa_mask);
-    sigaddset(&sa.sa_mask, SIGPIPE);
-    sa.sa_flags = 0;
-    sa.sa_handler = SIG_IGN;
-    sigaction(SIGPIPE, &sa, NULL);
+static gboolean signal_handler_init(void)
+{
+    struct sigaction sa = {0};
+
+    if (-1 == sigemptyset(&sa.sa_mask))
+    {
+        LOG_E("%s/%s: Failed to initialize signal handler: %s", __FILE__, __FUNCTION__, strerror(errno));
+        return FALSE;
+    }
+
+    sa.sa_handler = signal_handler;
+
+    if (0 > sigaction(SIGTERM, &sa, NULL) || 0 > sigaction(SIGABRT, &sa, NULL) || 0 > sigaction(SIGINT, &sa, NULL))
+    {
+        LOG_E("%s/%s: Failed to install signal handler: %s", __FILE__, __FUNCTION__, strerror(errno));
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 int main(int argc, char **argv)
 {
     GError *error = NULL;
-    int ret = 0;
-
-    init_signals();
-
     char *app_name = basename(argv[0]);
     open_syslog(app_name);
+
+    int ret = EXIT_SUCCESS;
+    if (!signal_handler_init())
+    {
+        ret = EXIT_FAILURE;
+        goto exit_syslog;
+    }
 
     // Create event handler
     ehandler = ax_event_handler_new();
@@ -328,7 +383,7 @@ int main(int argc, char **argv)
     {
         LOG_E("%s/%s: ax_parameter_new failed (%s)", __FILE__, __FUNCTION__, error->message);
         g_error_free(error);
-        ret = 1;
+        ret = EXIT_FAILURE;
         goto exit_ehandler;
     }
     // clang-format off
@@ -338,7 +393,7 @@ int main(int argc, char **argv)
         !setup_param("Server", server_callback))
     // clang-format on
     {
-        ret = 1;
+        ret = EXIT_FAILURE;
         goto exit_param;
     }
 
@@ -348,10 +403,12 @@ int main(int argc, char **argv)
 
     // Main loop
     LOG_I("%s/%s: Ready", __FILE__, __FUNCTION__);
-    GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    g_main_loop_run(loop);
+    main_loop = g_main_loop_new(NULL, FALSE);
+    g_main_loop_run(main_loop);
 
     // Cleanup and controlled shutdown
+    LOG_I("%s/%s: Unreference main loop ...", __FILE__, __FUNCTION__);
+    g_main_loop_unref(main_loop);
 exit_param:
     LOG_I("%s/%s: Free parameter handler ...", __FILE__, __FUNCTION__);
     ax_parameter_free(axparameter);
@@ -363,7 +420,7 @@ exit_ehandler:
     // Cleanup Modbus
     modbus_client_cleanup();
     modbus_server_stop();
-
+exit_syslog:
     LOG_I("%s/%s: Closing syslog ...", __FILE__, __FUNCTION__);
     close_syslog();
 
