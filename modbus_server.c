@@ -72,13 +72,6 @@ static void *run_modbus_server(void *run)
         // Sleep briefly to avoid busy-waiting
         usleep(200000); // Sleep for 200 ms
     }
-#if 0
-    if (-1 == modbus_tcp_accept(srv_ctx, &s))
-    {
-        LOG_E("%s/%s: modbus_tcp_accept failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
-        goto server_exit;
-    }
-#endif
 
     LOG_I("Allocate mapping ...");
     mb_mapping = modbus_mapping_new(1, 0, 0, 0);
