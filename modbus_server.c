@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2022, Axis Communications AB, Lund, Sweden
+ * Copyright (C) 2023, Axis Communications AB, Lund, Sweden
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <modbus.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -26,13 +27,14 @@
 static gboolean run_server = FALSE;
 static pthread_t modbus_server_thread_id = -1;
 static guint32 modbus_port = 0;
+static modbus_t *srv_ctx = NULL;
 
 static void *run_modbus_server(void *run)
 {
     assert(NULL != run);
-    modbus_t *srv_ctx;
     modbus_mapping_t *mb_mapping = NULL;
     int s;
+    int flags;
 
     assert(1024 <= modbus_port && 65535 >= modbus_port);
     LOG_I("Trying to create Modbus TCP context for all IP addresss and port %u ...", modbus_port);
@@ -51,12 +53,32 @@ static void *run_modbus_server(void *run)
         goto server_exit;
     }
 
+    flags = fcntl(s, F_GETFL, 0);
+    if (-1 == fcntl(s, F_SETFL, flags | O_NONBLOCK))
+    {
+        LOG_E("%s/%s: fcntl failed for socket (%s)", __FILE__, __FUNCTION__, strerror(errno));
+        goto server_exit;
+    }
+
     LOG_I("Accept Modbus TCP connection ...");
+    while (*((gboolean *)run))
+    {
+        // Attempt to accept a client connection (non-blocking)
+        if (0 < modbus_tcp_accept(srv_ctx, &s))
+        {
+            break;
+        }
+
+        // Sleep briefly to avoid busy-waiting
+        usleep(200000); // Sleep for 200 ms
+    }
+#if 0
     if (-1 == modbus_tcp_accept(srv_ctx, &s))
     {
         LOG_E("%s/%s: modbus_tcp_accept failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
         goto server_exit;
     }
+#endif
 
     LOG_I("Allocate mapping ...");
     mb_mapping = modbus_mapping_new(1, 0, 0, 0);
@@ -151,4 +173,5 @@ void modbus_server_stop()
         pthread_join(modbus_server_thread_id, NULL);
     }
     modbus_server_thread_id = -1;
+    srv_ctx = NULL;
 }
