@@ -11,13 +11,14 @@ application that exports events from
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
 (AOA) over
 [Modbus](https://en.wikipedia.org/wiki/Modbus) using
-[libmodbus](https://libmodbus.org/). The ACAP can be run in either server or
-client mode, meaning two Axis devices can be used to showcase it.
+[libmodbus](https://libmodbus.org/). The application can be run in either server
+or client mode, meaning two Axis devices can be used to showcase it.
 
 ![Architectural overview](images/acap_architecture.svg)
 
-*The purpose of this repo is to serve as boilerplate code and keep things
-simple, hence it uses basic Modbus/TCP without TLS and such.*
+> [!NOTE]
+> The purpose of this repo is to serve as boilerplate code and keep
+> things simple, hence it uses basic Modbus/TCP without TLS and such.
 
 ## Build
 
@@ -63,8 +64,8 @@ DOCKER_BUILDKIT=1 docker build --build-arg ARCH=aarch64 -o type=local,dest=. .
 
 ### Manual installation and configuration
 
-Upload the ACAP file (the file with the `.eap` extension for the camera's
-architecture) through the camera's web UI: *Apps->Add app*
+Upload the ACAP application file (the file with the `.eap` extension for the
+camera's architecture) through the camera's web UI: *Apps->Add app*
 
 The parameter settings are found in the three vertical dots menu:
 
@@ -72,7 +73,7 @@ The parameter settings are found in the three vertical dots menu:
 
 ![Web UI Screenshot](images/web_ui_param_settings.png)
 
-Select if the ACAP should run in Server or Client mode and what AOA scenario's
+Select if the application should run in Server or Client mode and what AOA scenario's
 events it should subscribe to (default: Scenario 1). If you run in Client
 mode, also make sure you have set the right hostname/IP address for the Modbus
 server you want to send the events to.
@@ -81,8 +82,8 @@ server you want to send the events to.
 
 Use the camera's
 [applications/upload.cgi](https://www.axis.com/vapix-library/subjects/t10102231/section/t10036126/display?section=t10036126-t10010609)
-to upload the ACAP file (the file with the `.eap` extension for the camera's
-architecture):
+to upload the ACAP application file (the file with the `.eap` extension for the
+camera's architecture):
 
 ```sh
 curl -k --anyauth -u root:<password> \
@@ -101,7 +102,7 @@ curl -k --anyauth -u root:<password> \
 
 Use the camera's
 [param.cgi](https://www.axis.com/vapix-library/subjects/t10175981/section/t10036014/display)
-to list and set the ACAP's parameters:
+to list and set the application's parameters:
 
 The call
 
@@ -127,8 +128,8 @@ curl -k --anyauth -u root:<password> \
 
 ## Usage
 
-The ACAP can be run in either client mode or server mode (default), configured
-with the application parameter `Mode`:
+The application can be run in either client mode or server mode (default),
+configured with the application parameter `Mode`:
 
 In client mode, it will subscribe to
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
@@ -140,9 +141,10 @@ parameter `Server`.
 In server mode, it will listen for incoming TCP requests and print incoming
 AOA status updates to the application log.
 
-***NB!** The default Modbus/TCP port 502 requires running as a privileged user.
-In order to run as a non-privileged user, this ACAP only allows ports in the
-non-privileged range 1024–65535.*
+> [!IMPORTANT]
+> The default Modbus/TCP port 502 requires running as a privileged user.
+> In order to run as a non-privileged user, this ACAP only allows ports in
+> the non-privileged range 1024–65535.
 
 ## License
 

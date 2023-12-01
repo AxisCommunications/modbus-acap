@@ -23,7 +23,7 @@ git clone https://github.com/<your username>/modbus-acap.git
 ### Create your feature branch
 
 ```sh
-git checkout -b <branch name>
+git switch -c <branch name>
 ```
 
 ### Lint code after adding changes
