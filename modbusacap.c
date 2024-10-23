@@ -36,7 +36,8 @@ static AXParameter *axparameter = NULL;
 static gboolean initialized = FALSE;
 static guint8 mode = 0;
 static guint32 port = 0;
-static guint subscription;
+static guint subscription_base;
+static guint subscription_threshold;
 static pthread_mutex_t lock;
 
 static void open_syslog(const char *app_name)
@@ -83,7 +84,7 @@ static void event_callback(guint subscription, AXEvent *event, void *data)
     ax_event_free(event);
 }
 
-static guint aoatrigger_subscription(const guint newscenario)
+static guint aoatrigger_subscription(const guint newscenario, const gchar *subtype)
 {
     assert(NULL != ehandler);
 
@@ -92,23 +93,8 @@ static guint aoatrigger_subscription(const guint newscenario)
 
     key_value_set = ax_event_key_value_set_new();
 
-    // Setup subscription string; for a scenario with name "Scenario 1" it will
-    // be "Device1Scenario1"
-    const gchar *devicestr = "Device1Scenario";
-    gchar *subscriptionstr = malloc(strlen(devicestr) + 3);
-    sprintf(subscriptionstr, "%s%u", devicestr, newscenario);
-    gchar *src;
-    gchar *dst;
-    for (dst = src = subscriptionstr; '\0' != *src; src++)
-    {
-        *dst = *src;
-        if (' ' != *dst)
-        {
-            dst++;
-        }
-    }
-    *dst = '\0';
-
+    // Setup subscription string and key/value set for subscription
+    gchar *subscriptionstr = g_strdup_printf("Device1Scenario%u%s", newscenario, NULL == subtype ? "" : subtype);
     LOG_I("%s/%s: Create subscription for '%s'", __FILE__, __FUNCTION__, subscriptionstr);
     ax_event_key_value_set_add_key_values(
         key_value_set,
@@ -145,16 +131,27 @@ static guint aoatrigger_subscription(const guint newscenario)
     return subscription;
 }
 
-static void setup_event_subscription(guint *subscription, const guint newscenario)
+static void teardown_event_subscriptions(void)
 {
     assert(NULL != ehandler);
-    assert(NULL != subscription);
 
-    // Unsubscribe to eventual existing subscription
-    (void)ax_event_handler_unsubscribe(ehandler, *subscription, NULL);
+    (void)ax_event_handler_unsubscribe(ehandler, subscription_base, NULL);
+    (void)ax_event_handler_unsubscribe(ehandler, subscription_threshold, NULL);
+}
 
-    // New subscription
-    *subscription = aoatrigger_subscription(newscenario);
+static void setup_event_subscriptions(const guint newscenario)
+{
+    assert(NULL != ehandler);
+
+    // Unsubscribe from eventual existing subscriptions
+    teardown_event_subscriptions();
+
+    // New subscriptions; we currently subscribe to and handle the stateful (active/inactive)
+    // events with topic2 set to (and X = 1, 2 ... N):
+    // - "Device1ScenarioX"
+    // - "Device1ScenarioXThreshold"
+    subscription_base = aoatrigger_subscription(newscenario, NULL);
+    subscription_threshold = aoatrigger_subscription(newscenario, "Threshold");
 }
 
 static gboolean setup_modbus(const guint8 mode, const guint32 port, const gchar *server)
@@ -207,7 +204,7 @@ static void scenario_callback(const gchar *name, const gchar *value, void *data)
     LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, scenario);
 
     // Update subscription
-    setup_event_subscription(&subscription, scenario);
+    setup_event_subscriptions(scenario);
 }
 
 static void close_current_modbus(const guint8 m)
@@ -333,6 +330,8 @@ static void signal_handler(gint signal_num)
     case SIGTERM:
     case SIGABRT:
     case SIGINT:
+        LOG_I("%s/%s: Unsubscribe from events ...", __FILE__, __FUNCTION__);
+        teardown_event_subscriptions();
         g_main_loop_quit(main_loop);
         break;
     default:
@@ -413,8 +412,7 @@ exit_param:
     LOG_I("%s/%s: Free parameter handler ...", __FILE__, __FUNCTION__);
     ax_parameter_free(axparameter);
 exit_ehandler:
-    LOG_I("%s/%s: Unsubscribe from events ...", __FILE__, __FUNCTION__);
-    ax_event_handler_unsubscribe(ehandler, subscription, NULL);
+    LOG_I("%s/%s: Free event handler ...", __FILE__, __FUNCTION__);
     ax_event_handler_free(ehandler);
 
     // Cleanup Modbus
