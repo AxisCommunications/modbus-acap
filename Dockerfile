@@ -6,6 +6,8 @@ ARG BUILD_DIR=/usr/local/src/server-acap
 FROM $SDK_IMAGE:$ACAP_SDK_VERSION-$ARCH-ubuntu20.04 AS builder
 ARG BUILD_DIR
 WORKDIR "$BUILD_DIR"
+COPY html/ ./html
+ADD https://code.jquery.com/jquery-3.7.1.min.js ./html/js/jquery.min.js
 COPY LICENSE \
      Makefile \
      manifest.json \
