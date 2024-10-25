@@ -13,6 +13,7 @@ ARG LIBMODBUS_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install additional build dependencies
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y -f --no-install-recommends \
     autoconf \
     automake \
@@ -25,8 +26,8 @@ RUN curl -L https://github.com/stephane/libmodbus/archive/refs/tags/v$LIBMODBUS_
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN . /opt/axis/acapsdk/environment-setup* && \
     ./autogen.sh && \
-    ./configure --host=$ARCH --prefix=/usr --enable-static=yes --enable-shared=no && \
-    make -j $(nproc) install prefix=$SDKTARGETSYSROOT/usr
+    ./configure --host="$ARCH" --prefix=/usr --enable-static=yes --enable-shared=no && \
+    make -j "$(nproc)" install prefix="$SDKTARGETSYSROOT"/usr
 
 # Build ACAP package
 WORKDIR "$ACAP_BUILD_DIR"
