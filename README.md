@@ -1,4 +1,4 @@
-*Copyright (C) 2023, Axis Communications AB, Lund, Sweden. All Rights Reserved.*
+*Copyright (C) 2024, Axis Communications AB, Lund, Sweden. All Rights Reserved.*
 
 # Modbus ACAP
 
@@ -6,8 +6,8 @@
 [![GitHub Super-Linter](https://github.com/AxisCommunications/modbus-acap/actions/workflows/super-linter.yml/badge.svg)](https://github.com/AxisCommunications/modbus-acap/actions/workflows/super-linter.yml)
 
 This repository contains the source code to build a small prototype
-[ACAP version 3](https://help.axis.com/acap-3-developer-guide)
-application that exports events from
+[ACAP version 4](https://axiscommunications.github.io/acap-documentation/)
+(native) application that exports events from
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
 (AOA) over
 [Modbus](https://en.wikipedia.org/wiki/Modbus) using
@@ -26,20 +26,12 @@ The build step creates `eap` (embedded application package) packages that can
 then be deployed on the target Axis device e.g. via the device's web UI.
 
 *For more information about the `eap` files, their content, and other ways to
-deploy, please see the
-[ACAP Developer Guide](https://help.axis.com/acap-3-developer-guide).*
+deploy, please see the documentation on how to
+[Develop ACAP applications](https://axiscommunications.github.io/acap-documentation/docs/develop/).*
 
-### On developer computer with ACAP SDK installed
-
-```sh
-# With the environment initialized, use:
-acap-build .
-```
-
-### Using ACAP SDK build container and Docker
-
-The handling of this is integrated in the [Makefile](Makefile), so if you have
-Docker and `make` on your computer all you need to do is:
+The build uses [Docker](https://www.docker.com/) and the containerized ACAP SDK.
+If you have `make` on your computer the Docker commands are nicely wrapped in
+the [Makefile](Makefile). All you need to do then is:
 
 ```sh
 make dockerbuild
@@ -74,7 +66,7 @@ The parameter settings are found in the three vertical dots menu:
 ![Web UI Screenshot](images/web_ui_param_settings.png)
 
 Select if the application should run in Server or Client mode and what AOA scenario's
-events it should subscribe to (default: Scenario 1). If you run in Client
+events it should subscribe to *(default: Scenario 1)*. If you run in Client
 mode, also make sure you have set the right hostname/IP address for the Modbus
 server you want to send the events to.
 
@@ -143,8 +135,8 @@ AOA status updates to the application log.
 
 > [!IMPORTANT]
 > The default Modbus/TCP port 502 requires running as a privileged user.
-> In order to run as a non-privileged user, this ACAP only allows ports in
-> the non-privileged range 1024–65535.
+> In order to run as a non-privileged user, this ACAP application only allows
+> ports in the non-privileged range 1024–65535.
 
 ## License
 
