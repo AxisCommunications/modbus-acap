@@ -1,0 +1,92 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+	<style>
+		* {
+			font-family: OpenSans, Arial, sans-serif;
+		}
+
+		body {
+			height: 100%;
+			background: linear-gradient(135deg, #ffffff 35%, #ffcc33 10%) fixed;
+		}
+
+		h1,
+		h3 {
+			color: #9a8b7d;
+		}
+
+		table {
+			border-collapse: collapse;
+			width: 50%;
+			background-color: rgba(114, 205, 244, 0.5);
+		}
+
+		table, th, td {
+			border: 1px solid rgba(216, 207, 198, 0.5);
+		}
+
+		th, td {
+			padding: 8px;
+		}
+
+		th {
+			text-align: left;
+			background-color: #72cdf4;
+		}
+
+		th.common {
+			background-color: #8dc63f;
+		}
+
+		td.common {
+			background-color: rgba(214, 224, 61, 0.5);
+		}
+	</style>
+	<title>Modbus ACAP Configuration</title>
+</head>
+
+<body>
+	<div style="float: left; margin-right: 20px;">
+		<img alt="" src="/camera/img/logo.png" />
+	</div>
+	<h1>Modbus ACAP Configuration</h1>
+	<table>
+		<tr>
+			<th class="common">Application mode</td>
+			<th class="common">
+				<select id="modeselection" onchange="modeChange(this.value)">
+					<option value="0">Server</option>
+					<option value="1">Client</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td class="common">Modbus TCP/IP port</td>
+			<td class="common"><input id="port" type="number" min="1024" max="65535" onchange="portChange(this.value)"></td>
+		</tr>
+	</table>
+
+	<div id="clientcfg">
+		<h3>Modbus server</h3>
+		<input id="server" type="input" onchange="serverChange(this.value)"></td>
+
+		<h3>AOA Scenarios</h3>
+		<table id="scenarios">
+			<tr>
+				<th>Name</th>
+				<th>ID no.</th>
+				<th>Type</th>
+			</tr>
+		</table>
+
+		<h3>Scenario selected for Modbus output</h3>
+		<select id="scenarioselection" onchange="scenarioChange(this.value)"></select>
+	</div>
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/modbusconfig.js"></script>
+</body>
+
+</html>
