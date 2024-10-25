@@ -122,7 +122,10 @@ static void *run_modbus_server(void *run)
         if (MODBUS_FC_WRITE_SINGLE_COIL == req[7])
         {
             LOG_I(
-                "%s/%s: The event trigger is now %s", __FILE__, __FUNCTION__, 0xFF == req[10] ? "ACTIVE" : "INACTIVE");
+                "%s/%s: The event trigger on the remote device is now %s",
+                __FILE__,
+                __FUNCTION__,
+                0xFF == req[10] ? "ACTIVE" : "INACTIVE");
             if (-1 == modbus_reply(srv_ctx, req, rlen, mb_mapping))
             {
                 LOG_E("%s/%s: modbus_reply failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
