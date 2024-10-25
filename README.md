@@ -120,23 +120,35 @@ curl -k --anyauth -u root:<password> \
 
 ## Usage
 
-The application can be run in either client mode or server mode (default),
-configured with the application parameter `Mode`:
-
-In client mode, it will subscribe to
-[AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
-(AOA) events for the AOA scenario specified in the application parameter
-`Scenario` (default: Scenario 1) and send the trigger status (active/inactive)
-over Modbus (TCP) to the Modbus server running on the host set in the ACAP's
-parameter `Server`.
-
-In server mode, it will listen for incoming TCP requests and print incoming
-AOA status updates to the application log.
-
 > [!IMPORTANT]
 > The default Modbus/TCP port 502 requires running as a privileged user.
 > In order to run as a non-privileged user, this ACAP application only allows
 > ports in the non-privileged range 1024–65535.
+
+The application can be run in either *client* mode (default) or *server* mode,
+configured with the application parameter `Mode`:
+
+### Client mode (default)
+
+![Camera to modbus device](images/cam_to_modbus.svg)
+
+The application subscribes to
+[AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
+(AOA) events for the specified scenario *(default: Scenario 1)* and sends
+trigger status *(active/inactive)* over Modbus (TCP) to the server specified
+in the application configuration. **This the typical use case** where the Axis
+device pushes AOA events to a receiving Modbus device.
+
+### Server mode
+
+![Camera to other camera](images/cam_to_cam.svg)
+
+In server mode, the application listens for incoming TCP requests and logs AOA
+status updates from a connected device running in client mode. **This mode is
+useful for testing and debugging without a separate Modbus device.**
+*In server mode, the application also subscribes to AOA events from its host
+device, but does not send them anywhere. That is solely for easy debugging and
+testing the application's subscription mechanism.*
 
 ## License
 

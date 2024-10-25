@@ -64,7 +64,11 @@ static void event_callback(guint subscription, AXEvent *event, void *data)
 
     if (ax_event_key_value_set_get_boolean(key_value_set, "active", NULL, &active, NULL))
     {
-        LOG_I("aoa-event %s active", active ? "is" : "NOT");
+        LOG_I(
+            "aoa-event %s active (%s)",
+            active ? "is" : "NOT",
+            CLIENT == mode ? "running in client mode, passing on via Modbus"
+                           : "running in server mode, not forwarded anywhere");
         // Send event over Modbus
         if (CLIENT == mode)
         {
@@ -76,7 +80,10 @@ static void event_callback(guint subscription, AXEvent *event, void *data)
     }
     else
     {
-        LOG_I("%s/%s: Failed to get boolean value active from event", __FILE__, __FUNCTION__);
+        LOG_I(
+            "%s/%s: Received event without boolean value 'active' (probably not a stateful event)",
+            __FILE__,
+            __FUNCTION__);
     }
 
     // Free the received event, n.b. AXEventKeyValueSet should not be freed
