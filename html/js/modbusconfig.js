@@ -5,18 +5,19 @@ const parambaseurl = '/axis-cgi/param.cgi?action=';
 const paramgeturl = parambaseurl + 'list&group= ' + appname + '.';
 const paramseturl = parambaseurl + 'update&' + appname + '.';
 const scenariourl = '/local/objectanalytics/control.cgi';
-const table = document.getElementById("scenarios");
-const port = document.getElementById("port");
-const server = document.getElementById("server");
 const clientcfg = document.getElementById("clientcfg");
+const table = document.getElementById("scenarios");
+const address = document.getElementById("address");
 const modeselection = document.getElementById("modeselection");
+const port = document.getElementById("port");
 const scenarioselection = document.getElementById("scenarioselection");
+const server = document.getElementById("server");
 const UpdateInterval = 5;
 const SERVER = 0;
 const CLIENT = 1;
 
-function portChange(newport) {
-	setNewValue('Port', newport);
+function addressChange(newaddress) {
+	setNewValue('ModbusAddress', newaddress);
 }
 
 function modeChange(newmode, setparam = true) {
@@ -35,12 +36,16 @@ function modeChange(newmode, setparam = true) {
 	}
 }
 
-function serverChange(newserver) {
-	setNewValue('Server', newserver);
+function portChange(newport) {
+	setNewValue('Port', newport);
 }
 
 function scenarioChange(newscenario) {
 	setNewValue('Scenario', newscenario);
+}
+
+function serverChange(newserver) {
+	setNewValue('Server', newserver);
 }
 
 function updateScenarioTable() {
@@ -111,6 +116,7 @@ async function setNewValue(param, value) {
 }
 
 async function updateValues() {
+	await getCurrentValue('ModbusAddress');
 	await getCurrentValue('Mode');
 	await getCurrentValue('Port');
 	await getCurrentValue('Scenario');
@@ -118,6 +124,7 @@ async function updateValues() {
 	await getScenarios();
 	modeChange(+(params['Mode']), false);
 	modeselection.value = +(params['Mode']);
+	address.value = +(params['ModbusAddress']);
 	port.value = +(params['Port']);
 	updateScenarioSelection();
 	server.value = params['Server'];

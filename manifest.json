@@ -7,11 +7,12 @@
             "vendor": "Axis Communications AB",
             "embeddedSdkVersion": "3.0",
             "runMode": "respawn",
-            "version": "1.2.2"
+            "version": "1.2.3"
         },
         "configuration": {
             "settingPage": "config.html",
             "paramConfig": [
+                {"name": "ModbusAddress", "type": "int:min=0,max=65535", "default": "0"},
                 {"name": "Mode", "type": "enum:0|Server, 1|Client", "default": "1"},
                 {"name": "Port", "type": "int:min=1024,max=65535", "default": "5020"},
                 {"name": "Scenario", "type": "int:min=1,max=99", "default": "1"},

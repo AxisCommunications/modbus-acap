@@ -34,6 +34,7 @@ static GMainLoop *main_loop = NULL;
 static AXEventHandler *ehandler;
 static AXParameter *axparameter = NULL;
 static gboolean initialized = FALSE;
+static guint16 address = 0;
 static guint8 mode = 0;
 static guint32 port = 0;
 static guint subscription_base;
@@ -72,7 +73,7 @@ static void event_callback(guint subscription, AXEvent *event, void *data)
         // Send event over Modbus
         if (CLIENT == mode)
         {
-            if (!modbus_client_send_event(active))
+            if (!modbus_client_send_event(address, active))
             {
                 LOG_E("%s/%s: Failed to send event data over Modbus", __FILE__, __FUNCTION__);
             }
@@ -196,24 +197,6 @@ static gchar *get_param(AXParameter *axparameter, const gchar *name)
     return value;
 }
 
-static void scenario_callback(const gchar *name, const gchar *value, void *data)
-{
-    (void)data;
-    if (NULL == value)
-    {
-        LOG_E("%s/%s: Unexpected NULL value for %s", __FILE__, __FUNCTION__, name);
-        return;
-    }
-
-    guint scenario = atoi(value);
-    assert(0 < scenario);
-    assert(100 > scenario);
-    LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, scenario);
-
-    // Update subscription
-    setup_event_subscriptions(scenario);
-}
-
 static void close_current_modbus(const guint8 m)
 {
     switch (m)
@@ -230,7 +213,7 @@ static void close_current_modbus(const guint8 m)
     }
 }
 
-static void server_callback(const gchar *name, const gchar *value, void *data)
+static void address_callback(const gchar *name, const gchar *value, void *data)
 {
     (void)data;
     if (NULL == value)
@@ -239,16 +222,10 @@ static void server_callback(const gchar *name, const gchar *value, void *data)
         return;
     }
 
-    pthread_mutex_lock(&lock);
-    close_current_modbus(mode);
-    LOG_I("%s/%s: Got new %s (%s)", __FILE__, __FUNCTION__, name, value);
-
-    // Setup Modbus for this mode
-    if (initialized && !setup_modbus(mode, port, value))
-    {
-        LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
-    }
-    pthread_mutex_unlock(&lock);
+    const int newaddress = atoi(value);
+    assert(0 <= newaddress || G_MAXUINT16 >= newaddress);
+    address = newaddress;
+    LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, address);
 }
 
 static void mode_callback(const gchar *name, const gchar *value, void *data)
@@ -295,6 +272,45 @@ static void port_callback(const gchar *name, const gchar *value, void *data)
     {
         LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
         assert(FALSE);
+    }
+    pthread_mutex_unlock(&lock);
+}
+
+static void scenario_callback(const gchar *name, const gchar *value, void *data)
+{
+    (void)data;
+    if (NULL == value)
+    {
+        LOG_E("%s/%s: Unexpected NULL value for %s", __FILE__, __FUNCTION__, name);
+        return;
+    }
+
+    guint scenario = atoi(value);
+    assert(0 < scenario);
+    assert(100 > scenario);
+    LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, scenario);
+
+    // Update subscription
+    setup_event_subscriptions(scenario);
+}
+
+static void server_callback(const gchar *name, const gchar *value, void *data)
+{
+    (void)data;
+    if (NULL == value)
+    {
+        LOG_E("%s/%s: Unexpected NULL value for %s", __FILE__, __FUNCTION__, name);
+        return;
+    }
+
+    pthread_mutex_lock(&lock);
+    close_current_modbus(mode);
+    LOG_I("%s/%s: Got new %s (%s)", __FILE__, __FUNCTION__, name, value);
+
+    // Setup Modbus for this mode
+    if (initialized && !setup_modbus(mode, port, value))
+    {
+        LOG_I("%s/%s: Failed to setup Modbus", __FILE__, __FUNCTION__);
     }
     pthread_mutex_unlock(&lock);
 }
@@ -393,7 +409,8 @@ int main(int argc, char **argv)
         goto exit_ehandler;
     }
     // clang-format off
-    if (!setup_param("Mode", mode_callback) ||
+    if (!setup_param("ModbusAddress", address_callback) ||
+        !setup_param("Mode", mode_callback) ||
         !setup_param("Port", port_callback) ||
         !setup_param("Scenario", scenario_callback) ||
         !setup_param("Server", server_callback))

@@ -19,7 +19,7 @@
 
 #include <glib.h>
 
-gboolean modbus_client_send_event(const gboolean active);
+gboolean modbus_client_send_event(const guint16 address, const gboolean active);
 gboolean modbus_client_init(const gchar *server, const guint32 port);
 void modbus_client_cleanup(void);
 

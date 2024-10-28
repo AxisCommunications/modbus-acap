@@ -70,6 +70,9 @@ events it should subscribe to *(default: Scenario 1)*. If you run in Client
 mode, also make sure you have set the right hostname/IP address for the Modbus
 server you want to send the events to.
 
+Use the Modbus address parameter to select what Modbus bit to use for state if
+the event is active or inactive.
+
 ### Scripted installation and configuration
 
 Use the camera's
@@ -124,6 +127,10 @@ curl -k --anyauth -u root:<password> \
 > The default Modbus/TCP port 502 requires running as a privileged user.
 > In order to run as a non-privileged user, this ACAP application only allows
 > ports in the non-privileged range 1024–65535.
+
+> [!IMPORTANT]
+> The Modbus address parameter must be set to the same value for both the
+> client and the receiving server.
 
 The application can be run in either *client* mode (default) or *server* mode,
 configured with the application parameter `Mode`:

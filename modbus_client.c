@@ -23,11 +23,11 @@
 
 static modbus_t *ctx = NULL;
 
-gboolean modbus_client_send_event(const gboolean active)
+gboolean modbus_client_send_event(const guint16 address, const gboolean active)
 {
     assert(NULL != ctx);
 
-    if (1 != modbus_write_bit(ctx, EVENT_ACTIVE_ADDRESS, active))
+    if (1 != modbus_write_bit(ctx, address, active))
     {
         LOG_E("%s/%s: Failed to write Modbus (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
     }

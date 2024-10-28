@@ -26,6 +26,4 @@
 #define LOG_E(fmt, args...) { LOG(LOG_ERR, fmt, ##args) }
 // clang-format on
 
-#define EVENT_ACTIVE_ADDRESS 0
-
 #endif /* _MODBUSACAP_COMMON_H_ */
