@@ -127,7 +127,6 @@ curl -k --anyauth -u root:<password> \
 > The default Modbus/TCP port 502 requires running as a privileged user.
 > In order to run as a non-privileged user, this ACAP application only allows
 > ports in the non-privileged range 1024–65535.
-
 > [!IMPORTANT]
 > The Modbus address parameter must be set to the same value for both the
 > client and the receiving server.
