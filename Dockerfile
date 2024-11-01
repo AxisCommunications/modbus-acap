@@ -10,7 +10,7 @@ FROM $SDK_IMAGE:$ACAP_SDK_VERSION-$ARCH AS builder
 ARG ACAP_BUILD_DIR
 ARG LIBMODBUS_BUILD_DIR
 ARG LIBMODBUS_VERSION
-ENV DEBIAN_FRONTEND=noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Install additional build dependencies
 # hadolint ignore=DL3008
