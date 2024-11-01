@@ -2,17 +2,17 @@
 
 # Modbus ACAP
 
-[![Build ACAPs](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml/badge.svg)](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml)
+[![Build ACAP packages](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml/badge.svg)](https://github.com/AxisCommunications/modbus-acap/actions/workflows/build.yml)
 [![GitHub Super-Linter](https://github.com/AxisCommunications/modbus-acap/actions/workflows/super-linter.yml/badge.svg)](https://github.com/AxisCommunications/modbus-acap/actions/workflows/super-linter.yml)
 
-This repository contains the source code to build a small prototype
+**This repository contains the source code to build a small prototype
 [ACAP version 4](https://axiscommunications.github.io/acap-documentation/)
 (native) application that exports events from
 [AXIS Object Analytics](https://www.axis.com/products/axis-object-analytics)
 (AOA) over
 [Modbus](https://en.wikipedia.org/wiki/Modbus) using
-[libmodbus](https://libmodbus.org/). The application can be run in either server
-or client mode, meaning two Axis devices can be used to showcase it.
+[libmodbus](https://libmodbus.org/).** The application can be run in either
+server or client mode, meaning two Axis devices can be used to showcase it.
 
 ![Architectural overview](images/acap_architecture.svg)
 
@@ -29,7 +29,7 @@ then be deployed on the target Axis device e.g. via the device's web UI.
 deploy, please see the documentation on how to
 [Develop ACAP applications](https://axiscommunications.github.io/acap-documentation/docs/develop/).*
 
-The build uses [Docker](https://www.docker.com/) and the containerized ACAP SDK.
+*The build* uses [Docker](https://www.docker.com/) and the containerized ACAP SDK.
 If you have `make` on your computer the Docker commands are nicely wrapped in
 the [Makefile](Makefile). All you need to do then is:
 
@@ -88,7 +88,7 @@ curl -k --anyauth -u root:<password> \
 
 To
 [start (or stop/restart/remove)](https://www.axis.com/vapix-library/subjects/t10102231/section/t10036126/display?section=t10036126-t10010606)
-the ACAP, you can make a call like this:
+the ACAP application, you can make a call like this:
 
 ```sh
 curl -k --anyauth -u root:<password> \
