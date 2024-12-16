@@ -7,7 +7,7 @@
             "vendor": "Axis Communications AB",
             "embeddedSdkVersion": "3.0",
             "runMode": "respawn",
-            "version": "1.2.3"
+            "version": "1.2.4"
         },
         "configuration": {
             "settingPage": "config.html",
