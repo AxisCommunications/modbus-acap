@@ -119,6 +119,8 @@ static void *run_modbus_server(void *run)
                 rlen);
             break;
         }
+        guint16 address = (req[8] << 8) | req[9];
+        LOG_I("%s/%s: Received request on address %d", __FILE__, __FUNCTION__, address);
         if (MODBUS_FC_WRITE_SINGLE_COIL == req[7])
         {
             LOG_I(
