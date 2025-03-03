@@ -29,12 +29,21 @@ then be deployed on the target Axis device e.g. via the device's web UI.
 deploy, please see the documentation on how to
 [Develop ACAP applications](https://axiscommunications.github.io/acap-documentation/docs/develop/).*
 
-*The build* uses [Docker](https://www.docker.com/) and the containerized ACAP SDK.
-If you have `make` on your computer the Docker commands are nicely wrapped in
-the [Makefile](Makefile). All you need to do then is:
+The build process uses the
+[ACAP SDK build container](https://hub.docker.com/r/axisecp/acap-sdk)
+and Docker or Podman.
+
+The Docker and Podman commands are integrated in the [Makefile](Makefile), so
+if you have Docker or Podman and `make` on your computer all you need to do is:
 
 ```sh
 make dockerbuild
+```
+
+or
+
+```sh
+make podmanbuild
 ```
 
 or perhaps build in parallel:
@@ -43,13 +52,28 @@ or perhaps build in parallel:
 make -j dockerbuild
 ```
 
+alternatively
+
+```sh
+make -j podmanbuild
+```
+
 If you do have Docker but no `make` on your system:
 
 ```sh
 # 32-bit ARM, e.g. ARTPEC-6- and ARTPEC-7-based devices
 DOCKER_BUILDKIT=1 docker build --build-arg ARCH=armv7hf -o type=local,dest=. .
-# 64-bit ARM, e.g. ARTPEC-8-based devices
+# 64-bit ARM, e.g. ARTPEC-8 and ARTPEC-9-based devices
 DOCKER_BUILDKIT=1 docker build --build-arg ARCH=aarch64 -o type=local,dest=. .
+```
+
+If you do have Podman but no `make` on your system:
+
+```sh
+# 32-bit ARM, e.g. ARTPEC-6- and ARTPEC-7-based devices
+podman build --build-arg ARCH=armv7hf -o type=local,dest=. .
+# 64-bit ARM, e.g. ARTPEC-8 and ARTPEC-9-based devices
+podman build --build-arg ARCH=aarch64 -o type=local,dest=. .
 ```
 
 ## Setup
