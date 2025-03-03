@@ -9,11 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEBIAN_FRONTEND: noninteractive
+    strategy:
+      matrix:
+        # Build both with Docker and Podman
+        builder: ["docker", "podman"]
     steps:
       - uses: actions/checkout@v4
       # Test all Makefile targets and make sure the ACAP files are created
       - name: Build
-        run: make -j dockerbuild
+        run: make -j ${{ matrix.builder }}build
       - name: Verify
         run: |
           for f in *.eap; do
