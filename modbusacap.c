@@ -287,7 +287,6 @@ static void scenario_callback(const gchar *name, const gchar *value, void *data)
 
     guint scenario = atoi(value);
     assert(0 < scenario);
-    assert(100 > scenario);
     LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, scenario);
 
     // Update subscription
