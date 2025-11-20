@@ -14,7 +14,7 @@ jobs:
         # Build both with Docker and Podman
         builder: ["docker", "podman"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # Test all Makefile targets and make sure the ACAP files are created
       - name: Build
         run: make -j ${{ matrix.builder }}build
