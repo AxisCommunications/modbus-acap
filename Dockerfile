@@ -32,7 +32,6 @@ RUN . /opt/axis/acapsdk/environment-setup* && \
 # Build ACAP package
 WORKDIR "$ACAP_BUILD_DIR"
 COPY html/ ./html
-ADD https://code.jquery.com/jquery-3.7.1.min.js ./html/js/jquery.min.js
 COPY LICENSE \
      Makefile \
      manifest.json \
