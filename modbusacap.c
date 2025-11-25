@@ -18,7 +18,6 @@
 #include <axevent.h>
 #include <axparameter.h>
 #include <libgen.h>
-#include <param.h>
 
 #include "modbus_client.h"
 #include "modbus_server.h"
@@ -285,7 +284,7 @@ static void scenario_callback(const gchar *name, const gchar *value, void *data)
         return;
     }
 
-    guint scenario = atoi(value);
+    const guint scenario = atoi(value);
     assert(0 < scenario);
     LOG_I("%s/%s: Got new %s (%u)", __FILE__, __FUNCTION__, name, scenario);
 
@@ -385,7 +384,7 @@ static gboolean signal_handler_init(void)
 int main(int argc, char **argv)
 {
     GError *error = NULL;
-    char *app_name = basename(argv[0]);
+    const char *app_name = basename(argv[0]);
     open_syslog(app_name);
 
     int ret = EXIT_SUCCESS;
