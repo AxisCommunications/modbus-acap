@@ -2,7 +2,7 @@ var params = {};
 var scenarios = {};
 const appname = 'Modbusacap';
 const parambaseurl = '/axis-cgi/param.cgi?action=';
-const paramgeturl = parambaseurl + 'list&group= ' + appname + '.';
+const paramgeturl = parambaseurl + 'list&group=' + appname + '.';
 const paramseturl = parambaseurl + 'update&' + appname + '.';
 const scenariourl = '/local/objectanalytics/control.cgi';
 const clientcfg = document.getElementById("clientcfg");
@@ -77,13 +77,18 @@ function updateScenarioSelection() {
 
 async function getScenarios() {
 	try {
-		const scenarioData = await $.post({
-			url: scenariourl,
+		const response = await fetch(scenariourl, {
+			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			data: '{"apiVersion": "1.2", "method": "getConfiguration"}'
+			body: '{"apiVersion": "1.2", "method": "getConfiguration"}'
 		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		const scenarioData = await response.json();
 		scenarios = scenarioData.data.scenarios;
 		for (i in scenarioData.data.scenarios) {
 			console.log('scenario id: ' + scenarios[i].id + ', scenario name: ' + scenarios[i].name + ', type: ' + scenarios[i].type);
@@ -97,7 +102,12 @@ async function getScenarios() {
 
 async function getCurrentValue(param) {
 	try {
-		const paramData = await $.get(paramgeturl + param);
+		const response = await fetch(paramgeturl + param);
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const paramData = await response.text();
 		params[param] = paramData.split('=')[1];
 		console.log('Got ' + param + ' value ' + params[param]);
 	} catch (error) {
@@ -107,7 +117,12 @@ async function getCurrentValue(param) {
 
 async function setNewValue(param, value) {
 	try {
-		await $.get(paramseturl + param + '=' + value);
+		const response = await fetch(paramseturl + param + '=' + value);
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
 		params[param] = value;
 		console.log('Set ' + param + ' value to ' + value);
 	} catch (error) {
