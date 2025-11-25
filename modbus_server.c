@@ -44,6 +44,11 @@ static void *run_modbus_server(void *run)
         LOG_E("%s/%s: Unable to create the libmodbus context (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
         goto server_exit;
     }
+    if (0 != modbus_set_response_timeout(srv_ctx, 1, 0))
+    {
+        LOG_E("%s/%s: Failed to set modbus response timeout (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
+        goto server_exit;
+    }
 
     LOG_I("Listen for Modbus TCP connection ...");
     s = modbus_tcp_listen(srv_ctx, 1);
@@ -88,6 +93,13 @@ static void *run_modbus_server(void *run)
         int rlen = modbus_receive(srv_ctx, req);
         if (-1 == rlen)
         {
+            if (ETIMEDOUT == errno)
+            {
+                // Timeout is expected, continue to wait for requests
+                continue;
+            }
+
+            // Other errors than timeout are fatal
             LOG_E("%s/%s: modbus_receive failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
             break;
         }
