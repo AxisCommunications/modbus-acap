@@ -1,5 +1,5 @@
 ARG ARCH=aarch64
-ARG SDK_VERSION=12.2.0
+ARG SDK_VERSION=12.7.0
 ARG SDK_IMAGE=docker.io/axisecp/acap-native-sdk
 ARG LIBMODBUS_VERSION=3.1.11
 ARG BUILD_DIR=/usr/local/src
