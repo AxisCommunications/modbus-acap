@@ -1,38 +1,137 @@
-var params = {};
-var scenarios = {};
 const appname = 'Modbusacap';
 const parambaseurl = '/axis-cgi/param.cgi?action=';
-const paramgeturl = parambaseurl + 'list&group=' + appname + '.';
-const paramseturl = parambaseurl + 'update&' + appname + '.';
+const paramgeturl = `${parambaseurl}list&group=${appname}.`;
+const paramseturl = `${parambaseurl}update&${appname}.`;
 const scenariourl = '/local/objectanalytics/control.cgi';
-const clientcfg = document.getElementById("clientcfg");
-const table = document.getElementById("scenarios");
-const address = document.getElementById("address");
-const modeselection = document.getElementById("modeselection");
-const port = document.getElementById("port");
-const scenarioselection = document.getElementById("scenarioselection");
-const server = document.getElementById("server");
-const UpdateInterval = 5;
-const SERVER = 0;
-const CLIENT = 1;
+const updateInterval = 5000; // milliseconds
+const MODE = { SERVER: 0, CLIENT: 1 };
+
+let params = {};
+let scenarios = [];
+
+// Cache DOM elements
+const elements = {
+	clientcfg: document.getElementById('clientcfg'),
+	table: document.getElementById('scenarios'),
+	address: document.getElementById('address'),
+	modeselection: document.getElementById('modeselection'),
+	port: document.getElementById('port'),
+	scenarioselection: document.getElementById('scenarioselection'),
+	server: document.getElementById('server')
+};
+
+// Utility function for fetch with error handling
+async function fetchWithErrorHandling(url, options = {}) {
+	const response = await fetch(url, options);
+	if (!response.ok) {
+		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+	}
+	return response;
+}
+
+async function getCurrentValue(param) {
+    try {
+        const response = await fetchWithErrorHandling(paramgeturl + param);
+        const paramData = await response.text();
+        const value = paramData.split('=')[1]?.trim();
+        
+        if (undefined !== value) {
+            params[param] = value;
+            console.log(`Got ${param}: ${value}`);
+            return value;
+        }
+        throw new Error('Invalid response format');
+    } catch (error) {
+        console.error(`Failed to get parameter ${param}:`, error);
+        alert(`Failed to get parameter ${param}`);
+    }
+}
+
+async function setNewValue(param, value) {
+	try {
+		await fetchWithErrorHandling(`${paramseturl}${param}=${encodeURIComponent(value)}`);
+		params[param] = value;
+		console.log(`Set ${param} to ${value}`);
+	} catch (error) {
+		console.error(`Failed to set parameter ${param}:`, error);
+		alert(`Failed to set parameter ${param}`);
+	}
+}
+
+async function getScenarios() {
+	try {
+		const response = await fetchWithErrorHandling(scenariourl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ apiVersion: '1.2', method: 'getConfiguration' })
+		});
+
+		const scenarioData = await response.json();
+		scenarios = scenarioData.data?.scenarios || [];
+
+		scenarios.forEach(scenario => {
+			console.log(`Scenario ID: ${scenario.id}, Name: ${scenario.name}, Type: ${scenario.type}`);
+		});
+
+		updateScenarioTable();
+		updateScenarioSelection();
+	} catch (error) {
+		console.error('Failed to get scenarios:', error);
+		alert('Failed to get scenario info from AOA');
+	}
+}
+
+function updateScenarioTable() {
+	// Clear existing rows (keep header)
+	while (1 < elements.table.rows.length) {
+		elements.table.deleteRow(1);
+	}
+
+	// Add scenario rows
+	scenarios.forEach(scenario => {
+		const row = elements.table.insertRow();
+		let i = 0;
+		row.insertCell(i++).textContent = scenario.name;
+		row.insertCell(i++).textContent = scenario.id;
+		row.insertCell(i).textContent = formatScenarioType(scenario.type);
+	});
+}
+
+function updateScenarioSelection() {
+	// Clear options
+	elements.scenarioselection.innerHTML = '';
+
+	// Add new options
+	scenarios.forEach(scenario => {
+		const option = new Option(`${scenario.name} (ID: ${scenario.id})`, scenario.id);
+		elements.scenarioselection.add(option);
+	});
+
+	// Set current value
+	if (params.Scenario) {
+		elements.scenarioselection.value = params.Scenario;
+	}
+}
+
+function formatScenarioType(type) {
+	return type.replace(/([A-Z])/g, ' $1').trim().toLowerCase();
+}
 
 function addressChange(newaddress) {
 	setNewValue('ModbusAddress', newaddress);
 }
 
 function modeChange(newmode, setparam = true) {
+	const mode = parseInt(newmode, 10);
+
 	if (setparam) {
-		setNewValue('Mode', newmode);
+		setNewValue('Mode', mode);
 	}
-	switch (+newmode) {
-		case SERVER:
-			clientcfg.style.display = 'none';
-			break;
-		case CLIENT:
-			clientcfg.style.display = 'block';
-			break;
-		default:
-			console.error('Unknown application mode: ' + newmode);
+
+	elements.clientcfg.style.display = mode === MODE.CLIENT ? 'block' : 'none';
+
+	if (mode !== MODE.SERVER && mode !== MODE.CLIENT) {
+		console.error('Unknown application mode:', mode);
 	}
 }
 
@@ -48,103 +147,47 @@ function serverChange(newserver) {
 	setNewValue('Server', newserver);
 }
 
-function updateScenarioTable() {
-	for (let i = table.rows.length - 1; i > 0; i--) {
-		table.deleteRow(i);
+function updateUI() {
+	if (undefined !== params.Mode ) {
+		elements.modeselection.value = params.Mode;
+		modeChange(params.Mode, false);
 	}
-	for (const scenario of scenarios) {
-		const row = table.insertRow();
-		var i = 0;
-		const nameCell = row.insertCell(i++);
-		const idCell = row.insertCell(i++);
-		const typeCell = row.insertCell(i++);
 
-		idCell.innerText = scenario.id;
-		nameCell.innerText = scenario.name;
-		typeCell.innerText = scenario.type.replace(/([A-Z])/g, ' $1').toLowerCase();
+	if (undefined !== params.ModbusAddress) {
+		elements.address.value = params.ModbusAddress;
 	}
-}
 
-function updateScenarioSelection() {
-	while (scenarioselection.options.length > 0) {
-		scenarioselection.remove(0);
+	if (undefined !== params.Port) {
+		elements.port.value = params.Port;
 	}
-	for (const scenario of scenarios) {
-		scenarioselection.add(new Option(`${scenario.name} (ID: ${scenario.id})`, scenario.id));
-	}
-	scenarioselection.value = +(params['Scenario']);
-}
 
-async function getScenarios() {
-	try {
-		const response = await fetch(scenariourl, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: '{"apiVersion": "1.2", "method": "getConfiguration"}'
-		});
-
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		const scenarioData = await response.json();
-		scenarios = scenarioData.data.scenarios;
-		for (i in scenarioData.data.scenarios) {
-			console.log('scenario id: ' + scenarios[i].id + ', scenario name: ' + scenarios[i].name + ', type: ' + scenarios[i].type);
-		}
-		updateScenarioTable();
-	} catch (error) {
-		alert('Failed to get scenario info from AOA');
-		console.error('Failed to get scenario info from AOA: ', error)
-	}
-}
-
-async function getCurrentValue(param) {
-	try {
-		const response = await fetch(paramgeturl + param);
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-
-		const paramData = await response.text();
-		params[param] = paramData.split('=')[1];
-		console.log('Got ' + param + ' value ' + params[param]);
-	} catch (error) {
-		alert('Failed to get parameter ' + param);
-	}
-}
-
-async function setNewValue(param, value) {
-	try {
-		const response = await fetch(paramseturl + param + '=' + value);
-
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-
-		params[param] = value;
-		console.log('Set ' + param + ' value to ' + value);
-	} catch (error) {
-		alert('Failed to set parameter ' + param);
+	if (undefined !== params.Server) {
+		elements.server.value = params.Server;
 	}
 }
 
 async function updateValues() {
-	await getCurrentValue('ModbusAddress');
-	await getCurrentValue('Mode');
-	await getCurrentValue('Port');
-	await getCurrentValue('Scenario');
-	await getCurrentValue('Server');
-	await getScenarios();
-	modeChange(+(params['Mode']), false);
-	modeselection.value = +(params['Mode']);
-	address.value = +(params['ModbusAddress']);
-	port.value = +(params['Port']);
-	updateScenarioSelection();
-	server.value = params['Server'];
-	console.log('Will call again in ' + UpdateInterval + ' seconds to make sure we are in sync with device');
-	setTimeout(updateValues, 1000 * UpdateInterval);
+	try {
+		// Fetch all parameters in parallel
+		await Promise.all([
+			getCurrentValue('ModbusAddress'),
+			getCurrentValue('Mode'),
+			getCurrentValue('Port'),
+			getCurrentValue('Scenario'),
+			getCurrentValue('Server'),
+			getScenarios()
+		]);
+
+		// Update UI with fetched values
+		updateUI();
+
+		console.log(`Will update again in ${updateInterval / 1000} seconds`);
+	} catch (error) {
+		console.error('Error updating values:', error);
+	} finally {
+		// Schedule next update
+		setTimeout(updateValues, updateInterval);
+	}
 }
 
 updateValues();
