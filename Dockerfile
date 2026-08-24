@@ -2,6 +2,7 @@ ARG ARCH=aarch64
 ARG SDK_VERSION=12.11.0
 ARG SDK_IMAGE=docker.io/axisecp/acap-native-sdk
 ARG LIBMODBUS_VERSION=3.1.11
+ARG LIBMODBUS_SHA256=8a750452ef86a53de6cec6fbca67bd5be08d0a1e87278a422fbce3003fd42d99
 ARG BUILD_DIR=/usr/local/src
 ARG ACAP_BUILD_DIR="$BUILD_DIR"/app
 ARG LIBMODBUS_BUILD_DIR="$BUILD_DIR"/libmodbus
@@ -10,6 +11,7 @@ FROM $SDK_IMAGE:$SDK_VERSION-$ARCH AS builder
 ARG ACAP_BUILD_DIR
 ARG LIBMODBUS_BUILD_DIR
 ARG LIBMODBUS_VERSION
+ARG LIBMODBUS_SHA256
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install additional build dependencies
@@ -22,8 +24,10 @@ RUN apt-get update && apt-get install -y -f --no-install-recommends \
 # Build libmodbus
 WORKDIR "$LIBMODBUS_BUILD_DIR"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN curl -L https://github.com/stephane/libmodbus/archive/refs/tags/v$LIBMODBUS_VERSION.tar.gz | tar --strip-components=1 -xz
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN curl -L -o libmodbus.tar.gz https://github.com/stephane/libmodbus/archive/refs/tags/v$LIBMODBUS_VERSION.tar.gz && \
+    echo "$LIBMODBUS_SHA256  libmodbus.tar.gz" | sha256sum -c - && \
+    tar --strip-components=1 -xzf libmodbus.tar.gz && \
+    rm libmodbus.tar.gz
 RUN . /opt/axis/acapsdk/environment-setup* && \
     ./autogen.sh && \
     ./configure --host="$ARCH" --prefix=/usr --enable-static=yes --enable-shared=no && \
@@ -38,7 +42,6 @@ COPY LICENSE \
      *.c \
      *.h \
      ./
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN . /opt/axis/acapsdk/environment-setup* && \
     acap-build .
 
