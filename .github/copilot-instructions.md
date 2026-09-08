@@ -28,6 +28,7 @@ applyTo: "**"
 - Build with the project flags, including `-Wall`, `-Werror`, `-Wformat=2`, and strict prototype checks. Treat warnings as errors.
 - Follow existing C style: 4-space indentation, Allman braces, declarations at the start of a block, `NULL != value` comparisons, braces around single-line blocks, and explicit error paths.
 - Name file-static and global variables with a trailing underscore. Keep function parameters and local variables unsuffixed unless an established convention requires otherwise.
+- Prefer direct expressions and local ownership handling when they are clear. Add a helper function or intermediate variable only when it removes meaningful duplication, enforces an invariant, or materially improves readability; do not add wrappers that only relocate a few lines of code.
 - Always set `const` on anything that can be `const`.
 - Always assert function parameters at the start of a function, then validate external input before relying on it. Retain assertions for internal invariants and use explicit return-value, errno, and `GError` handling for external failures.
 - Never dereference a pointer without first establishing that it is not `NULL`.

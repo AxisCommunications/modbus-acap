@@ -21,17 +21,18 @@
 #include "modbus_client.h"
 #include "modbusacap_common.h"
 
-static modbus_t *ctx = NULL;
+static modbus_t *ctx_ = NULL;
 
 gboolean modbus_client_send_event(const guint16 address, const gboolean active)
 {
-    assert(NULL != ctx);
+    assert(NULL != ctx_);
 
-    if (1 != modbus_write_bit(ctx, address, active))
+    if (1 != modbus_write_bit(ctx_, address, active))
     {
         LOG_E("%s/%s: Failed to write Modbus (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
+        return FALSE;
     }
-    LOG_I("%s/%s: Successfully called modbus_write_bit", __FILE__, __FUNCTION__);
+    LOG_I("✅ Successfully called modbus_write_bit");
     return TRUE;
 }
 
@@ -39,18 +40,19 @@ gboolean modbus_client_init(const gchar *server, const guint32 port)
 {
     assert(NULL != server);
     assert(1024 <= port && 65535 >= port);
-    modbus_free(ctx);
-    LOG_I("Trying to create Modbus TCP context for %s:%u", server, port);
-    ctx = modbus_new_tcp(server, port);
-    if (NULL == ctx)
+    modbus_free(ctx_);
+    LOG_I("⏳ Trying to create Modbus TCP context for %s:%u ...", server, port);
+    ctx_ = modbus_new_tcp(server, port);
+    if (NULL == ctx_)
     {
         LOG_E("%s/%s: Unable to create the libmodbus context (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
         return FALSE;
     }
-    if (0 != modbus_connect(ctx))
+    if (0 != modbus_connect(ctx_))
     {
         LOG_E("%s/%s: Failed to connect (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
-        modbus_free(ctx);
+        modbus_free(ctx_);
+        ctx_ = NULL;
         return FALSE;
     }
     return TRUE;
@@ -58,5 +60,6 @@ gboolean modbus_client_init(const gchar *server, const guint32 port)
 
 void modbus_client_cleanup()
 {
-    modbus_free(ctx);
+    modbus_free(ctx_);
+    ctx_ = NULL;
 }

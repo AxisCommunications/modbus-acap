@@ -24,33 +24,40 @@
 #include "modbus_server.h"
 #include "modbusacap_common.h"
 
-static gboolean run_server = FALSE;
-static pthread_t modbus_server_thread_id = -1;
-static guint32 modbus_port = 0;
-static modbus_t *srv_ctx = NULL;
+static gint run_server_ = FALSE;
+static pthread_t modbus_server_thread_id_;
+static gboolean modbus_server_thread_running_ = FALSE;
+static guint32 modbus_port_ = 0;
+
+enum ClientState
+{
+    CLIENT_DISCONNECTED,
+    CLIENT_WAITING,
+    CLIENT_CONNECTED
+};
 
 static void *run_modbus_server(void *run)
 {
     assert(NULL != run);
     modbus_mapping_t *mb_mapping = NULL;
-    int s;
-    int flags;
+    modbus_t *srv_ctx = NULL;
+    int s = -1;
 
-    assert(1024 <= modbus_port && 65535 >= modbus_port);
-    LOG_I("Trying to create Modbus TCP context for all IP addresss and port %u ...", modbus_port);
-    srv_ctx = modbus_new_tcp(NULL, modbus_port);
+    assert(1024 <= modbus_port_ && 65535 >= modbus_port_);
+    LOG_I("⏳ Trying to create Modbus TCP context for all IP addresss and port %u ...", modbus_port_);
+    srv_ctx = modbus_new_tcp(NULL, modbus_port_);
     if (NULL == srv_ctx)
     {
         LOG_E("%s/%s: Unable to create the libmodbus context (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
         goto server_exit;
     }
-    if (0 != modbus_set_response_timeout(srv_ctx, 1, 0))
+    if (0 != modbus_set_indication_timeout(srv_ctx, 1, 0))
     {
-        LOG_E("%s/%s: Failed to set modbus response timeout (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
+        LOG_E("%s/%s: Failed to set Modbus indication timeout (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
         goto server_exit;
     }
 
-    LOG_I("Listen for Modbus TCP connection ...");
+    LOG_I("⏳ Start listening for Modbus TCP connection ...");
     s = modbus_tcp_listen(srv_ctx, 1);
     if (-1 == s)
     {
@@ -58,38 +65,43 @@ static void *run_modbus_server(void *run)
         goto server_exit;
     }
 
-    flags = fcntl(s, F_GETFL, 0);
+    const int flags = fcntl(s, F_GETFL, 0);
     if (-1 == fcntl(s, F_SETFL, flags | O_NONBLOCK))
     {
         LOG_E("%s/%s: fcntl failed for socket (%s)", __FILE__, __FUNCTION__, strerror(errno));
         goto server_exit;
     }
 
-    LOG_I("Accept Modbus TCP connection ...");
-    while (*((gboolean *)run))
-    {
-        // Attempt to accept a client connection (non-blocking)
-        if (0 < modbus_tcp_accept(srv_ctx, &s))
-        {
-            break;
-        }
-
-        // Sleep briefly to avoid busy-waiting
-        usleep(200000); // Sleep for 200 ms
-    }
-
-    LOG_I("Allocate mapping ...");
-    mb_mapping = modbus_mapping_new(1, 0, 0, 0);
+    LOG_I("⏳ Allocate mapping ...");
+    mb_mapping = modbus_mapping_new(65536, 0, 0, 0);
     if (NULL == mb_mapping)
     {
         LOG_E("%s/%s: Failed to allocate the mapping: %s", __FILE__, __FUNCTION__, modbus_strerror(errno));
         goto server_exit;
     }
 
-    LOG_I("%s/%s: Start receiving ...", __FILE__, __FUNCTION__);
     uint8_t req[MODBUS_TCP_MAX_ADU_LENGTH];
-    while (*((gboolean *)run))
+    enum ClientState client_state = CLIENT_DISCONNECTED;
+    while (g_atomic_int_get((gint *)run))
     {
+        if (CLIENT_DISCONNECTED == client_state)
+        {
+            LOG_I("⏳ Waiting for Modbus TCP connection on port %u ...", modbus_port_);
+            client_state = CLIENT_WAITING;
+        }
+        if (CLIENT_WAITING == client_state)
+        {
+            // Attempt to accept a client connection (non-blocking)
+            if (0 >= modbus_tcp_accept(srv_ctx, &s))
+            {
+                // Sleep briefly to avoid busy-waiting
+                usleep(200000); // Sleep for 200 ms
+                continue;
+            }
+            client_state = CLIENT_CONNECTED;
+            LOG_I("⏳ Client connected, start receiving ...");
+        }
+
         int rlen = modbus_receive(srv_ctx, req);
         if (-1 == rlen)
         {
@@ -99,9 +111,10 @@ static void *run_modbus_server(void *run)
                 continue;
             }
 
-            // Other errors than timeout are fatal
-            LOG_E("%s/%s: modbus_receive failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
-            break;
+            LOG_I("ⓘ Modbus client disconnected (%s)", modbus_strerror(errno));
+            modbus_close(srv_ctx);
+            client_state = CLIENT_DISCONNECTED;
+            continue;
         }
 #if 0
     LOG_I(
@@ -124,28 +137,28 @@ static void *run_modbus_server(void *run)
 #endif
         if (12 > rlen)
         {
-            LOG_I(
+            LOG_E(
                 "%s/%s: The requests we handle should be longer than the %d bytes we now got",
                 __FILE__,
                 __FUNCTION__,
                 rlen);
-            break;
+            modbus_close(srv_ctx);
+            client_state = CLIENT_DISCONNECTED;
+            continue;
         }
         guint16 address = (req[8] << 8) | req[9];
-        LOG_I("%s/%s: Received request on address %d", __FILE__, __FUNCTION__, address);
+        LOG_I("ⓘ Received request on address %d", address);
         if (MODBUS_FC_WRITE_SINGLE_COIL == req[7])
         {
-            LOG_I(
-                "%s/%s: The event trigger on the remote device is now %s",
-                __FILE__,
-                __FUNCTION__,
-                0xFF == req[10] ? "ACTIVE" : "INACTIVE");
+            LOG_I("ⓘ The event trigger on the remote device is now %s", 0xFF == req[10] ? "ACTIVE" : "INACTIVE");
             if (-1 == modbus_reply(srv_ctx, req, rlen, mb_mapping))
             {
                 LOG_E("%s/%s: modbus_reply failed (%s)", __FILE__, __FUNCTION__, modbus_strerror(errno));
-                break;
+                modbus_close(srv_ctx);
+                client_state = CLIENT_DISCONNECTED;
+                continue;
             }
-            LOG_I("%s/%s: Send reply to client for acknowledgement", __FILE__, __FUNCTION__);
+            LOG_I("✅ Reply sent to client for acknowledgement");
         }
     }
 
@@ -163,25 +176,25 @@ server_exit:
 gboolean modbus_server_start(const guint32 port)
 {
     modbus_server_stop();
-    run_server = TRUE;
-    modbus_port = port;
-    int result = pthread_create(&modbus_server_thread_id, NULL, run_modbus_server, &run_server);
+    g_atomic_int_set(&run_server_, TRUE);
+    modbus_port_ = port;
+    int result = pthread_create(&modbus_server_thread_id_, NULL, run_modbus_server, &run_server_);
     if (0 != result)
     {
         LOG_E("%s/%s: Failed to create thread (%s)", __FILE__, __FUNCTION__, strerror(result));
         return FALSE;
     }
+    modbus_server_thread_running_ = TRUE;
     return TRUE;
 }
 
 void modbus_server_stop()
 {
-    run_server = FALSE;
-    if (0 < (int)modbus_server_thread_id)
+    g_atomic_int_set(&run_server_, FALSE);
+    if (modbus_server_thread_running_)
     {
-        LOG_I("%s/%s: Joining running server thread ...", __FILE__, __FUNCTION__);
-        pthread_join(modbus_server_thread_id, NULL);
+        LOG_I("⏳ Joining running server thread ...");
+        pthread_join(modbus_server_thread_id_, NULL);
+        modbus_server_thread_running_ = FALSE;
     }
-    modbus_server_thread_id = -1;
-    srv_ctx = NULL;
 }
