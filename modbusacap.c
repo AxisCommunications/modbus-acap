@@ -43,17 +43,6 @@ static guint subscription_base_;
 static guint subscription_threshold_;
 static pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER;
 
-static void open_syslog(const char *app_name)
-{
-    openlog(app_name, LOG_PID, LOG_LOCAL4);
-}
-
-static void close_syslog(void)
-{
-    LOG_I("✅ Exiting!");
-    closelog();
-}
-
 static void event_callback(guint subscription, AXEvent *event, void *data)
 {
     const AXEventKeyValueSet *key_value_set;
@@ -407,11 +396,18 @@ static gboolean signal_handler_init(void)
     return TRUE;
 }
 
+static gboolean ready_callback(gpointer user_data)
+{
+    (void)user_data;
+    LOG_I("✅ Main loop started");
+    return G_SOURCE_REMOVE;
+}   
+
 int main(int argc, char **argv)
 {
     GError *error = NULL;
     const char *app_name = basename(argv[0]);
-    open_syslog(app_name);
+    openlog(app_name, LOG_PID, LOG_LOCAL4);
 
     int ret = EXIT_SUCCESS;
     if (!signal_handler_init())
@@ -454,8 +450,10 @@ int main(int argc, char **argv)
     }
 
     // Main loop
-    LOG_I("✅ Ready");
+    LOG_I("⏳ Create main loop ...");
     main_loop_ = g_main_loop_new(NULL, FALSE);
+    (void)g_idle_add_full(G_PRIORITY_HIGH, ready_callback, NULL, NULL);
+    LOG_I("⏳ Start main loop ...");
     g_main_loop_run(main_loop_);
 
     // Cleanup and controlled shutdown
@@ -473,8 +471,8 @@ exit_ehandler:
     modbus_server_stop();
     g_free(server_);
 exit_syslog:
-    LOG_I("🧹 Closing syslog ...");
-    close_syslog();
+    LOG_I("✅ Exiting");
+    closelog();
 
     return ret;
 }
