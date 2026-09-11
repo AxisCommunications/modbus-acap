@@ -401,7 +401,7 @@ static gboolean ready_callback(gpointer user_data)
     (void)user_data;
     LOG_I("✅ Main loop started");
     return G_SOURCE_REMOVE;
-}   
+}
 
 int main(int argc, char **argv)
 {
