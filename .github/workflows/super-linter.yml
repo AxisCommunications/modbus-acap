@@ -12,8 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        # v7.0.1
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -21,7 +20,6 @@ jobs:
         run: cat .github/super-linter.env >> "$GITHUB_ENV"
 
       - name: Lint code base
-        # v8.7.0
-        uses: super-linter/super-linter/slim@4ce20838b8ab83717e78138c5b3a1407148e0918
+        uses: super-linter/super-linter/slim@2da136927bd4a73596db63044b504547c62cb854 # v9.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
